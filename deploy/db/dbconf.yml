@@ -1,0 +1,15 @@
+prod:
+    driver: postgres
+    open: user=wikiadmin dbname=MeritWiki sslmode=disable
+
+dev:
+    driver: postgres
+    open: user=wikiadmin_test dbname=MeritWiki_test sslmode=disable
+
+test:
+    driver: postgres
+    open: user=wikiadmin_test dbname=MeritWiki_test sslmode=disable
+
+shawn:
+    driver: postgres
+    open: user=wikiadmin_test dbname=MeritWiki_test sslmode=disable

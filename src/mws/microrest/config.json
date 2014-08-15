@@ -1,0 +1,8 @@
+{
+	"Port":"8686",
+	"ApiVersion":"3.0",
+	"RootPath": "/merit",
+	"Swagger_WebServicesUrl": "http://127.0.0.1",
+	"SwaggerFilePath":"/Users/skircher/CodeProjects/go/src/swagger-ui/dist"
+	"ConfigRoot":"../../../deploy/db"
+}

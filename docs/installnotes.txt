@@ -1,0 +1,82 @@
+#initial setup
+login via ssh to IP address, login as: root, use password provided
+passwd (pick a good one)
+useradd admin
+passwd admin (pick a good one)
+yum -y upgrade
+echo 'admin ALL=(ALL) ALL'>>/etc/sudoers
+exit
+
+login via ssh again, login as: admin, use password set above
+sudo vi /etc/ssh/sshd_config change to PermitRootLogin no and PasswordAuthentication no (FYI: vi basics)
+sudo service sshd restart
+mkdir .ssh
+chmod 700 .ssh
+vi .ssh/authorized_keys cut-n-paste the following lines:
+ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAIEAoNcLEz5jDcOL/9VkgGNNLqpTq/ro51zKn/E+wxvm95xO2TW0qa9GhmK51NvPzzgjWcJkWPVAQlHFFJRoi7tb1E4ATgBx8lkDxodZ8cel4R0wmhTp3pj+TSoK6sCrKcEaO7jNOK/NkqaJfUwV/r5I2eMBETAW97L6M6JRCxn5uEE= dwayne's laptop
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDpkdmnPT0vux3aCpDDadp9bQ+mrFHsyDnsXTl5IASv35ygtLnb43HwG/DeFO2NrIpCcsfkJNFMyZge1QT8OrrVL3FVTOSNbrynr60P8z7tmaCuUbrWEjR8fFW3VJOF1oj9Q+bvc7hVQY9BXMKl3gqO7cmCqNs2N2vsVnXPqpsHiQ== dwayne's phone
+
+#postgres
+create language -d MeritWiki_test plpgsql
+
+
+sudo vim  /var/lib/pgsql/data/pg_hba.conf
+sudo service postgresql restart
+#install go
+go1.2.linux-386.tar.gz
+# installing Goose for db migrations
+sudo yum install git
+sudo yum install goose
+sudo yum install mercurial
+#mkdir for base go libs
+#install in base go src
+go get bitbucket.org/liamstask/goose/cmd/goose
+#edit config file to include path to where goose is installed so you can run it 
+export PATH=$HOME/CodeProjects/go/bin:$PATH
+
+export goose/bin into PATH
+
+#install in base gosrc
+go get github.com/wordnik/swagger-ui/
+update dist/index.html
+#
+# goose stuff
+cd $WIKIROOT/deploy/db
+cd migrations
+# create new script
+goose -env=dev -path="../." create AddSection sql
+#apply sc
+cd dev
+ goose -env=dev -path="../." up
+ goose -env=dev -path="../." down
+ goose -env=dev -path="../." up
+ goose -env=dev -path="../." dbversion
+ goose -env=dev -path="../." status
+
+##Clear old db versions
+sh drop_testdb.sh dev
+sh init_devdb.sh dev
+
+# on server you have to modify wikiServer.go for url and swagger-ui location for your server ip and home dir
+#WebServicesUrl: "http://localhost:8686"
+#SwaggerFilePath: "/Users/skircher/CodeProjects/go/src/swagger-ui/dist"
+
+#start server
+nohup ./server -wikiEnv=dev &
+#watch server log
+tail -F nohup.out:
+
+#find/stop server process
+#ps aux | grep server
+#admin     4971  0.0  0.7 843140  3732 pts/0    Sl   15:42   0:00 server -wikiEnv=dev
+#kill -9 4971
+
+# install php test client stuff
+sudo yum install php
+wget http://phar.phpunit.de/phpunit.phar
+chmod +x phpunit.phar
+sudo mv phpunit.phar /usr/local/bin/phpunit
+#
+#run php test client
+cd src/mws/client
+phpunit --colors SimpleTest.php

@@ -1,0 +1,5 @@
+--- FAIL: TestRevisionModelFindByAuthor (0.13 seconds)
+	RevisionModel_test.go:28: mws/model.TestRevisionModelFindByAuthor Broken: got id , wanted id 
+FAIL
+exit status 1
+FAIL	mws/model	1.126s

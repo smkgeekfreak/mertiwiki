@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+  <TITLE>Server Build Notes</title>
+<style type="text/css">
+  P, TD { font-family:Tahoma,Arial,Helvetica; }
+  H1 { font-family:Tahoma,Arial,Helvetica; text-align:center; }
+  H2 { font-family:Tahoma,Arial,Helvetica; background-color:#30055C; color:white; padding-left: 5; padding-bottom: 2; }
+  H3 { font-family:Tahoma,Arial,Helvetica; background-color:#807090; color:white; padding-left: 5; padding-bottom: 2; }
+  BODY { margin-left:30px; margin-right:30px; font-family:Tahoma,Arial,Helvetica; }
+  A:link, A:visited, A:active { color:#30055c; text-decoration: none;  }
+  .file { background-color:f0f0f0; border:1px solid black; padding:6px;  }
+</style>
+</head>
+<body>
+<H1>Generic CentOS 6.4 Server Notes</H1>
+
+<ol>
+<h2>Create admin account</h2>
+<li>login via ssh to IP address, login as: root, use password provided
+<li><tt>passwd</tt> (pick a good one)
+<li><tt>useradd <i>admin</i></tt>
+<li><tt>passwd admin</tt> (pick a good one) 
+<li><tt>yum -y upgrade</tt>
+<li><tt>echo 'admin ALL=(ALL) ALL'&gt;&gt;/etc/sudoers</tt>
+<li><tt>exit</tt>
+
+<h2>Setup SSH</h2>
+<li>login via ssh again, login as: admin, use password set above
+<li><tt>sudo vi /etc/ssh/sshd_config</tt> change to <tt>PermitRootLogin no</tt> and <tt>PasswordAuthentication no</tt> (FYI: <a href=http://www.cs.colostate.edu/helpdocs/vi.html>vi basics</a>)
+<li><tt>sudo service sshd restart</tt>
+
+<li><tt>mkdir .ssh</tt>
+<li><tt>chmod 700 .ssh</tt>
+<li><tt>vi .ssh/authorized_keys</tt> cut-n-paste the following lines:
+<pre class=file>
+ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAIEAoNcLEz5jDcOL/9VkgGNNLqpTq/ro51zKn/E+wxvm95xO2TW0qa9GhmK51NvPzzgjWcJkWPVAQlHFFJRoi7tb1E4ATgBx8lkDxodZ8cel4R0wmhTp3pj+TSoK6sCrKcEaO7jNOK/NkqaJfUwV/r5I2eMBETAW97L6M6JRCxn5uEE= dwayne's laptop
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDpkdmnPT0vux3aCpDDadp9bQ+mrFHsyDnsXTl5IASv35ygtLnb43HwG/DeFO2NrIpCcsfkJNFMyZge1QT8OrrVL3FVTOSNbrynr60P8z7tmaCuUbrWEjR8fFW3VJOF1oj9Q+bvc7hVQY9BXMKl3gqO7cmCqNs2N2vsVnXPqpsHiQ== dwayne's phone
+</pre>
+<li>Follow <a href=https://www.digitalocean.com/community/articles/how-to-create-ssh-keys-with-putty-to-connect-to-a-vps>these instructions</a> to generate your key and paste it in as well
+<li><tt>chmod 600 .ssh/authorized_keys</tt>
+<li><tt>exit</tt>
+<li>login without password
+
+<h2>Make more secure</h2>
+
+<li><tt>sudo rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm</tt>
+<li><tt>sudo yum -y install denyhosts</tt>
+<li><tt>sudo chkconfig denyhosts on</tt>
+<li><tt>sudo /etc/init.d/denyhosts start</tt>
+<li><tt>sudo vi /etc/sysconfig/iptables</tt> (paste following in)
+<pre class=file>
+# By default drop all incoming and forwarded traffic
+# Allow all outgoing traffic
+
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+
+# Allow returning packets
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Allow incoming traffic on port 5432 for postgres
+-A INPUT -p tcp --dport 5432 -j ACCEPT
+
+# Allow incoming traffic on ports 80 and 443 for web server
+-A INPUT -p tcp --dport 80 -j ACCEPT
+-A INPUT -p tcp --dport 443 -j ACCEPT
+
+# Allow local traffic
+-A INPUT -i lo -j ACCEPT
+
+# Allow ping
+-A INPUT -p icmp --icmp-type ping -j ACCEPT
+
+# Allow incoming SSH
+-A INPUT -p tcp --dport 22 -j ACCEPT
+
+COMMIT
+</pre>
+<li><tt>sudo chmod 600 /etc/sysconfig/iptables</tt>
+<li><tt>sudo service iptables restart</tt>
+<li><tt>sudo chkconfig iptables on</tt>
+
+<h2>Install postgresql</h2>
+
+<li><tt>sudo yum -y install postgresql</tt>
+<li><tt>sudo service postgresql initdb</tt>
+<li><tt>sudo service postgresql start</tt>
+<li><tt>sudo chkconfig postgresql on</tt>
+<li><tt>sudo vi /var/lib/pgsql/data/pg_hba.conf</tt> change <tt>local all all ident</tt> to <tt>local all all trust</tt>
+<li><tt>sudo service postgresql restart</tt>
+
+<h2>Install GO</h2>
+
+<li><tt>wget http://go.googlecode.com/files/go1.1.2.linux-386.tar.gz</tt>
+<li><tt>sudo tar -C /usr/local -xzf go1.1.2.linux-386.tar.gz</tt>
+<li><tt>vi .bash_profile</tt> add at the end: <tt>export PATH=$PATH:/usr/local/go/bin</tt>
+<li><tt>exit</tt>
+
+</ol>
+
+<h2>Possibly useful commands</h2>
+<ul>
+<li><tt>createdb -U postgres<tt>
+<li><tt>psql -U postgres</tt>
+<li><tt>go</tt>
+</ul>
+
+</BODY></HTML>
+
